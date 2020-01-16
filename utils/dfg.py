@@ -7,6 +7,15 @@ from pm4py.util.constants import PARAMETER_CONSTANT_ACTIVITY_KEY
 from pm4py.visualization.common.utils import human_readable_stat
 
 
+def find_start_end(dfg):
+    source = []
+    target = []
+    for edge in dfg:
+        source.append(edge[0])
+        target.append(edge[1])
+    return list(set(source) - set(target)), list(set(target) - set(source))
+
+
 def dfg_vis(dfg, log=None, parameters=None, activities_count=None, measure="frequency"):
     if parameters is None:
         parameters = {}
@@ -109,14 +118,17 @@ def graphviz_visualization(
         activities_to_include = set(activities_in_dfg)
 
     node_edge_data = {"nodes": [], "edges": []}
+    activities_map = {}
 
     for act in activities_to_include:
         if "frequency" in measure and act in activities_count_int:
             node_edge_data["nodes"].append(
-                {"data": {"id": act, "label": activities_count_int[act]}}
+                {"data": {"id": act, "label": str(activities_count_int[act])}}
             )
+            activities_map[act] = str(hash(act))
         else:
             node_edge_data["nodes"].append({"data": {"id": act, "label": None}})
+            activities_map[act] = str(hash(act))
 
     # represent edges
     for edge in dfg:
@@ -127,6 +139,25 @@ def graphviz_visualization(
         node_edge_data["edges"].append(
             {"data": {"source": edge[0], "target": edge[1], "id": label}}
         )
+
+    start_activities_to_include = [
+        act for act in start_activities if act in activities_map
+    ]
+    end_activities_to_include = [act for act in end_activities if act in activities_map]
+
+    if start_activities_to_include:
+        node_edge_data["nodes"].append({"data": {"id": "start", "label": None}})
+        for act in start_activities_to_include:
+            node_edge_data["edges"].append(
+                {"data": {"source": "start", "target": act, "id": None}}
+            )
+
+    if end_activities_to_include:
+        node_edge_data["nodes"].append({"data": {"id": "end", "label": None}})
+        for act in end_activities_to_include:
+            node_edge_data["edges"].append(
+                {"data": {"source": act, "target": "end", "id": None}}
+            )
 
     return node_edge_data
 
