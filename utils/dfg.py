@@ -43,9 +43,11 @@ def dfg_vis(dfg, log=None, parameters=None, activities_count=None, measure="freq
             activities_count = attributes_filter.get_attribute_values(
                 log, activity_key, parameters=parameters
             )
+            activities_count["start"] = len(log)
         else:
             activities = dfg_utils.get_activities_from_dfg(dfg)
             activities_count = {key: 1 for key in activities}
+            activities_count["start"] = None
 
     return graphviz_visualization(
         activities_count,
@@ -121,7 +123,7 @@ def graphviz_visualization(
     activities_map = {}
 
     for act in activities_to_include:
-        if "frequency" in measure and act in activities_count_int:
+        if act in activities_count_int:
             node_edge_data["nodes"].append(
                 {"data": {"id": act, "label": str(activities_count_int[act])}}
             )
@@ -146,18 +148,44 @@ def graphviz_visualization(
     end_activities_to_include = [act for act in end_activities if act in activities_map]
 
     if start_activities_to_include:
-        node_edge_data["nodes"].append({"data": {"id": "start", "label": None}})
+        node_edge_data["nodes"].append(
+            {"data": {"id": "start", "label": str(activities_count_int["start"])}}
+        )
         for act in start_activities_to_include:
-            node_edge_data["edges"].append(
-                {"data": {"source": "start", "target": act, "id": None}}
-            )
+            if "frequency" in measure:
+                node_edge_data["edges"].append(
+                    {
+                        "data": {
+                            "source": "start",
+                            "target": act,
+                            "id": str(activities_count_int[act]),
+                        }
+                    }
+                )
+            else:
+                node_edge_data["edges"].append(
+                    {"data": {"source": "start", "target": act, "id": None,}}
+                )
 
     if end_activities_to_include:
-        node_edge_data["nodes"].append({"data": {"id": "end", "label": None}})
+        node_edge_data["nodes"].append(
+            {"data": {"id": "end", "label": str(activities_count_int["start"])}}
+        )
         for act in end_activities_to_include:
-            node_edge_data["edges"].append(
-                {"data": {"source": act, "target": "end", "id": None}}
-            )
+            if "frequency" in measure:
+                node_edge_data["edges"].append(
+                    {
+                        "data": {
+                            "source": act,
+                            "target": "end",
+                            "id": str(activities_count_int[act]),
+                        }
+                    }
+                )
+            else:
+                node_edge_data["edges"].append(
+                    {"data": {"source": act, "target": "end", "id": None,}}
+                )
 
     return node_edge_data
 
