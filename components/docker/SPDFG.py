@@ -10,14 +10,14 @@ from utils.dfg import dfg_vis, find_start_end
 
 
 @app.input(Csv(key="inputData1", alias="inputData"))
-@app.param(String(key="param1", alias="measure", default="frequency"))
+@app.param(String(key="param1", alias="measure", default="performance", help="performance, frequency"))
 @app.param(Bool(key="param2", alias="hideStartEndNode", default=False))
 @app.output(Json(key="outputData1", alias="outputData"))
 def SPDFG(context):
     args = context.args
     df = convert_df_pm_format(args.inputData)
     log = df_to_log(df)
-    dfg = dfg_miner.apply(log)
+    dfg = dfg_miner.apply(log, variant=args.measure)
     params = {}
     if not args.hideStartEndNode:
         start, end = find_start_end(dfg)
